@@ -13,7 +13,8 @@
 
 int main(int argc,char *argv[]){
 
-	int fd_in, fd_out, open_flags;
+	int fd_in, fd_out;
+	int  open_flags;
 	mode_t file_rights;
 	ssize_t num_read;
 	int buff_size;
@@ -32,18 +33,24 @@ int main(int argc,char *argv[]){
 	open_flags = O_CREAT | O_WRONLY | O_TRUNC | O_EXCL;
 	file_rights = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH | S_IWOTH;
 	fd_out = open(argv[2], open_flags, file_rights);
-	if(fd_out == -1)
-		err_exit("Could not open destination file %s", argv[2]);
-
+	if(fd_out == -1){
+		switch(errno){
+			case EEXIST:
+				close(fd_out);
+				err_exit("%s already exists\n");
+			default :
+				err_exit("Could not open destination file %s", argv[2]);
+		}
+	}
 // Transfer data from Source to Destitation until finished or there is an error
 
-	while((num_read = read(fd_in, buffer, buff_size)) > 0)
-		if(write(fd_out, buffer, num_read) != num_read{
+	while((num_read = read(fd_in, buffer, buff_size)) != 0){
+		if(write(fd_out, buffer, buff_size) != num_read){
 			close(fd_in);
 			close(fd_out);
 			err_exit("Could not write entire buffer.");
 		}
-
+	}
 		if(num_read == -1)
 			err_exit("read error");
 
